@@ -7,6 +7,7 @@ from .base import History
 class TrainingSettings:
     def __init__(self):
         self.gamma = None
+        self.exploration = None
 
 class Trainer:
     def __init__(self, world, actor_critic, settings):
@@ -46,6 +47,13 @@ class Trainer:
 
             acts = pred[1][0].tolist()
             ai = acts.index(max(acts))
+
+            # Add Exploration
+            if random.uniform(0.0, 1.0) < self.settings.exploration:
+                L = len(acts)
+                exp = random.randint(0, L)
+                ai = (ai + exp) % L
+
             actions = [0.0 for ap in acts]
             actions[ai] = 1.0
             h.action_0 = actions

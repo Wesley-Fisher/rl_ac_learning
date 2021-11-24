@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tensorflow.python.keras.engine import training
 
 from base.base import Properties, State, World
 from base.actor_critic import ActorCritic, NetworkSettings
@@ -7,7 +8,7 @@ from base.trainer import Trainer, TrainingSettings
 
 class ThreeArmBanditProperties(Properties):
     def __init__(self):
-        self.mu  = [0, -0.5,  1]
+        self.mu  = [0, 0.5,  1]
         self.sig = [3, 0.1, 0.5]
 
 class ThreeArmBanditState(State):
@@ -67,6 +68,7 @@ if __name__ == "__main__":
 
     training_settings = TrainingSettings()
     training_settings.gamma = 0.9
+    training_settings.exploration = 0.05
 
     trainer = Trainer(world, actor_critic, training_settings)
 
