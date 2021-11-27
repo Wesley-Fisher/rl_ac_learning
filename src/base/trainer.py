@@ -76,9 +76,6 @@ class Trainer:
                                                h.state_1,
                                                h.action_0,
                                                h.action_prob_0)
-            '''
-            print(h.reward_1)
-            '''
             hist.append(h)
         
         if len(hist) == 0:
@@ -121,11 +118,3 @@ class Trainer:
             print("%s -> %s -> %s / %s" % (str(state), str(act), str(target), str(adv)))
         '''
         self.actor_critic.fit(data)
-        '''
-        self.actor_critic.model.fit(x=data,
-                                    verbose=verbosity,
-                                    batch_size=1,
-                                    epochs=num_epochs)
-        '''
-
-        #for layer in self.actor_critic.model.layers: print(layer.get_config()['name'], '\n', layer.get_weights())

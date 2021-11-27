@@ -138,5 +138,7 @@ class ActorCritic:
                 print(self.actor_model.layers[i].name)
                 print(gradients[i])
             '''
+
+            #for layer in self.actor_critic.model.layers: print(layer.get_config()['name'], '\n', layer.get_weights())
             
             self.optimizer.apply_gradients(zip(gradients, self.actor_model.trainable_weights))
