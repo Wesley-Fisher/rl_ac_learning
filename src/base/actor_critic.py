@@ -26,7 +26,7 @@ class NetworkSettings:
         self.k_entropy = 0.0
         self.dropout = 0.0
 
-def actor_critic_loss(loss_critic_out, loss_actor_out, loss_return_value, loss_action, loss_advantage, k_critic, k_actor, k_entropy):
+def actor_loss(loss_actor_out, loss_action, loss_advantage, k_critic, k_actor, k_entropy):
             # Heavy Influence: https://www.tensorflow.org/tutorials/reinforcement_learning/actor_critic
             '''
             ACTOR LOSS: change probability of action taken in direction of sign(advantage)
@@ -47,7 +47,7 @@ def actor_critic_loss(loss_critic_out, loss_actor_out, loss_return_value, loss_a
             - multiply by advantage to control direction we want to go
             - positive advantage: we do want to increase probability, etc
             '''
-            eps = 1e-4
+            eps = 1e-3
             loss_actor_out = K.clip(loss_actor_out, eps, 1.0-eps) # Prevent 0 or 1
 
             log_prob = K.log(loss_actor_out)
@@ -55,11 +55,20 @@ def actor_critic_loss(loss_critic_out, loss_actor_out, loss_return_value, loss_a
             adjustments = selected_act * loss_advantage
             actor_loss = -K.sum(adjustments)
 
-            critic_loss = K.pow(loss_return_value - loss_critic_out, 2)
-
             entropy = tf.math.reduce_sum(loss_actor_out * K.log(loss_actor_out))
 
-            return k_actor*actor_loss + k_critic*critic_loss + k_entropy*entropy
+            '''
+            print("Actor Loss:")
+            print(loss_actor_out)
+            print(log_prob)
+            print(loss_action)
+            print(selected_act)
+            print(adjustments)
+            print(actor_loss)
+            print(entropy)
+            '''
+
+            return k_actor*actor_loss + k_entropy*entropy
 
 class ActorCritic:
 
@@ -93,7 +102,7 @@ class ActorCritic:
         for i, num in enumerate(settings.actor_layers):
             actor_layer = Dense(num, kernel_initializer=ik, bias_initializer=ib, name='actor_dense_'+str(i))(actor_layers[-1])
             actor_layers.append(actor_layer)
-            actor_layer = ReLU(name='actor_dense_relu'+str(i))(actor_layers[-1])
+            actor_layer = LeakyReLU(alpha=0.3, name='actor_dense_relu'+str(i))(actor_layers[-1])
             actor_layers.append(actor_layer)
             #actor_layer = Dropout(settings.dropout, name='actor_dense_dropout'+str(i))(actor_layers[-1])
             #actor_layers.append(actor_layer)
@@ -108,12 +117,12 @@ class ActorCritic:
         return self.critic_model(data)
     
     def predict_actions(self, data):
-        return self.actor_model(data).numpy().tolist()
+        return self.actor_model(data).numpy().tolist()[0]
 
     def fit(self, data):
 
         # Critic is easy to train
-        self.critic_model.fit(data[0], data[2])
+        self.critic_model.fit(data[0], data[2], verbose=0)
 
         for i in range(0, data[0].shape[0]):
             state = data[0][i]
@@ -122,13 +131,15 @@ class ActorCritic:
             advantage = data[3][i]
 
             with tf.GradientTape() as tape:
-                pred = self.model((state.reshape((1,2)), action, target, advantage))
-                loss = actor_critic_loss(pred[0][0], pred[1][0], target, action, advantage, self.settings.k_critic, self.settings.k_actor, self.settings.k_entropy)
+                pred = self.actor_model((state.reshape((1,self.settings.in_shape[0]))))
+                loss = actor_loss(pred, action, advantage, self.settings.k_critic, self.settings.k_actor, self.settings.k_entropy)
 
-            gradients = tape.gradient(loss, self.model.trainable_weights)
+            gradients = tape.gradient(loss, self.actor_model.trainable_weights)
+
             '''
             for i in range(0, len(gradients)):
-                print(self.model.layers[i].name)
+                print(self.actor_model.layers[i].name)
                 print(gradients[i])
             '''
-            self.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
+            
+            self.optimizer.apply_gradients(zip(gradients, self.actor_model.trainable_weights))

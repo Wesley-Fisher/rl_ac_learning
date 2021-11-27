@@ -67,12 +67,12 @@ class FourArmBanditWorld(World):
                 acts = network.predict_actions(data)
 
 
-                print("%s - (%s)" % (str(acts), str(vec)))
+                print("%s - (%s) - (%s)" % (str(acts), str(acts.index(max(acts))), str(vec)))
         print("")
 
 if __name__ == "__main__":
     N_batches = 500
-    N_per_batch = 10
+    N_per_batch = 100
 
     properties = FourArmBanditProperties()
     state = FourArmBanditState()
@@ -84,10 +84,10 @@ if __name__ == "__main__":
     network_settings.shared_layers = [8, 4]
     network_settings.actor_layers = [8, 4]
     network_settings.critic_layers = [4, 4]
-    network_settings.alpha = 1e-2
-    network_settings.k_actor = 1e1
-    network_settings.k_critic = 1e1
-    network_settings.k_entropy = 1e-5
+    network_settings.alpha = 1e-4
+    network_settings.k_actor = 1e0
+    network_settings.k_critic = 1e0
+    network_settings.k_entropy = 1e-6
     network_settings.dropout = 0
 
     actor_critic = ActorCritic(network_settings)
