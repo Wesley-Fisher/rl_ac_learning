@@ -24,7 +24,7 @@ class FourArmBanditWorld(World):
         return self.state.acted
     
     def reset_state(self):
-        eps = 1e-3
+        eps = 0
         self.state.in_state = [random.randint(0, 1)+eps, random.randint(0, 1)+eps]
         self.state.acted = False
     
@@ -40,11 +40,15 @@ class FourArmBanditWorld(World):
     
     def get_reward(self, s0, s1, a, ap):
         i = a.index(max(a))
-        iTrue = s0.in_state[0] + 2*s0.in_state[1]
+        iTrue = self.get_correct_index(s0.in_state[0], s0.in_state[1])
         if i == iTrue:
             return random.gauss(self.properties.mu_sel, 0.5)
         else:
             return random.gauss(self.properties.mu_unsel, 0.5)
+    
+    def get_correct_index(self, s0, s1):
+        iTrue = int(s0 + 2*s1)
+        return iTrue
     
     def animate(self, history, network):
         actions = []
@@ -65,9 +69,9 @@ class FourArmBanditWorld(World):
                 vec = np.array([np.array([[unit], [two]]).reshape(2,)])
                 data = (vec)
                 acts = network.predict_actions(data)
+                iTrue = self.get_correct_index(unit, two)
 
-
-                print("%s - (%s) - (%s)" % (str(acts), str(acts.index(max(acts))), str(vec)))
+                print("%s - (%s; %d) - (%s)" % (str(acts), str(acts.index(max(acts))), iTrue, str(vec)))
         print("")
 
 if __name__ == "__main__":
@@ -84,17 +88,17 @@ if __name__ == "__main__":
     network_settings.shared_layers = [8, 4]
     network_settings.actor_layers = [8, 4]
     network_settings.critic_layers = [4, 4]
-    network_settings.alpha = 1e-4
+    network_settings.alpha = 1e-3
     network_settings.k_actor = 1e0
     network_settings.k_critic = 1e0
-    network_settings.k_entropy = 1e-6
+    network_settings.k_entropy = 1e-9
     network_settings.dropout = 0
 
     actor_critic = ActorCritic(network_settings)
 
     training_settings = TrainingSettings()
     training_settings.gamma = 0.9
-    training_settings.exploration = 0.05
+    training_settings.exploration = 0.1
 
     trainer = Trainer(world, actor_critic, training_settings)
 
