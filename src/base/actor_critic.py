@@ -16,13 +16,11 @@ class NetworkSettings:
     def __init__(self):
         self.in_shape = None
         self.actor_shape = None
-        self.shared_layers = None
         self.actor_layers = None
         self.critic_layers = None
         self.alpha = None
 
         self.k_actor = 1.0
-        self.k_critic = 1.0
         self.k_entropy = 0.0
         self.dropout = 0.0
 
@@ -107,7 +105,6 @@ class ActorCritic:
             actor_layer = Dropout(settings.dropout, name='actor_dense_dropout'+str(i))(actor_layers[-1])
             actor_layers.append(actor_layer)
         actor_out = Dense(settings.actor_shape, activation='softmax', name='actor_out')(actor_layers[-1])
-        #actor_out = Softmax(name='actor_softmax')(actor_out)
 
         self.actor_model = Model(actor_input, actor_out, name='actor')
         self.actor_model.compile(optimizer=self.optimizer, run_eagerly=True)

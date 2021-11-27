@@ -56,12 +56,10 @@ if __name__ == "__main__":
     network_settings = NetworkSettings()
     network_settings.in_shape = (1,)
     network_settings.actor_shape = 3
-    network_settings.shared_layers = [3]
     network_settings.actor_layers = [3]
     network_settings.critic_layers = [2]
     network_settings.alpha = 1e-3
     network_settings.k_actor = 1.0
-    network_settings.k_critic = 1.0
     network_settings.k_entropy = 0.0
     network_settings.dropout = 0.25
 
