@@ -11,7 +11,10 @@ STEPS = 15
 
 class StraightBridgeProperties(Properties):
     def __init__(self):
-        pass
+        self.negative = [0.0] * STEPS
+        for i in range(0, STEPS):
+            if i % 3 == 0:
+                self.negative[i] = 1.0
 
 class StraightBridgeState(State):
     def __init__(self):
@@ -42,20 +45,27 @@ class StraightBridgeWorld(World):
     
     def step(self, action):
         i = action.index(max(action))
+        pos = self.get_pos(self.state.position)
+        neg = self.properties.negative[pos] > 0
         if i == 0:
-            pos = self.get_pos(self.state.position)
-            if pos < STEPS:
+            if pos < STEPS and not neg:
                 self.state.position[pos] = 0.0
                 self.state.position[pos+1] = 1.0
+            elif pos > 0 and neg:
+                self.state.position[pos] = 0.0
+                self.state.position[pos-1] = 1.0
             else:
                 self.state.off = True
         elif i == 1:
             self.state.off = True
         elif i == 2:
             pos = self.get_pos(self.state.position)
-            if pos > 0:
+            if pos > 0 and not neg:
                 self.state.position[pos] = 0.0
                 self.state.position[pos-1] = 1.0
+            elif pos < STEPS and neg:
+                self.state.position[pos] = 0.0
+                self.state.position[pos+1] = 1.0
             else:
                 self.state.off = True
         elif i == 3:
@@ -66,7 +76,9 @@ class StraightBridgeWorld(World):
             return 1
         if s1.off:
             return -1
-        return -0.01
+        if self.get_pos(s1.position) > self.get_pos(s0.position):
+            return 0.1
+        return -0.1
     
     def animate(self, history, network):
         actions = []
@@ -87,6 +99,7 @@ class StraightBridgeWorld(World):
 
         vals = [0.0] * STEPS
         fors = [0.0] * STEPS
+        backs = [0.0] * STEPS
         for i in range(0, STEPS):
             position = [0.0]  * STEPS
             position[i] = 1.0
@@ -98,9 +111,11 @@ class StraightBridgeWorld(World):
 
             acts = network.predict_actions(data)
             fors[i] = float('%.3f' % acts[0])
+            backs[i] = float('%.3f' % acts[2])
 
         print(vals)
         print(fors)
+        print(backs)
         print("")
 
 if __name__ == "__main__":
@@ -118,14 +133,15 @@ if __name__ == "__main__":
     network_settings.critic_layers = [8, 4]
     network_settings.alpha = 1e-3
     network_settings.k_actor = 1e0
-    network_settings.k_entropy = 1e-9
+    network_settings.k_entropy = 1e-1
     network_settings.dropout = 0.25
 
     actor_critic = ActorCritic(network_settings)
 
     training_settings = TrainingSettings()
     training_settings.gamma = 0.9
-    training_settings.exploration = 0.1
+    training_settings.exploration = 0.05
+    training_settings.exploration_drawn = 0.20
 
     trainer = Trainer(world, actor_critic, training_settings)
 
