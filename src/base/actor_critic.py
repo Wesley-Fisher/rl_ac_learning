@@ -83,7 +83,7 @@ class ActorCritic:
 
         self.critic_model = Model(critic_input, critic_out, name='critic')
         self.optimizer = Adam(settings.alpha)
-        self.critic_model.compile(optimizer=self.optimizer, run_eagerly=True)
+        self.critic_model.compile(optimizer=self.optimizer, run_eagerly=True, loss='mse')
         self.critic_model.summary()
 
 
@@ -111,6 +111,10 @@ class ActorCritic:
         return self.actor_model(data).numpy().tolist()
 
     def fit(self, data):
+
+        # Critic is easy to train
+        self.critic_model.fit(data[0], data[2])
+
         for i in range(0, data[0].shape[0]):
             state = data[0][i]
             action = data[1][i]
