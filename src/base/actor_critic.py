@@ -121,60 +121,10 @@ class ActorCritic:
 
         outputs = [critic_out, actor_out]
 
-        # MODEL
-
-        def actor_critic_loss(loss_actor_out, loss_action, loss_advantage):
-            # Heavy Influence: https://www.tensorflow.org/tutorials/reinforcement_learning/actor_critic
-            '''
-            ACTOR LOSS: change probability of action taken in direction of sign(advantage)
-            critic_out: prediction of network
-            actor_out: prediction of network. List of probabilities that sum to 1
-            action: actions actually taken (list of 0's and 1's)
-
-            Use log probabilities in loss function. We will decrease the loss
-            We want the taken action (if advantage is positive) to be more likely
-            - prob increases (0 to 1)
-            - log(prob) increases (-inf to 0)
-            - action * log_prob selects only the log_prob of the action taken
-            - action * log_prob increases
-            - action * log_prob * (advantage > 0) increases
-            - action * log_prob * (advantage > 0) * (-1) decreases
-            - we get closer to where we want to go
-            Advantage:
-            - multiply by advantage to control direction we want to go
-            - positive advantage: we do want to increase probability, etc
-            '''
-            eps = 1e-4
-            loss_actor_out = K.clip(loss_actor_out, eps, 1.0-eps) # Prevent 0 or 1
-
-            log_prob = K.log(loss_actor_out)
-            selected_act = loss_action * log_prob
-            adjustments = selected_act * loss_advantage
-            actor_loss = -K.sum(adjustments)
-
-
-            return settings.k_actor*actor_loss
-
-        def critic_loss(loss_critic_out, loss_return_value):
-            critic_loss = K.pow(loss_return_value - loss_critic_out, 2)
-            return tf.math.reduce_sum(settings.k_critic*critic_loss)
-        
-        def entropy_loss(loss_actor_out):
-            entropy = tf.math.reduce_sum(loss_actor_out * K.log(loss_actor_out))
-            return tf.math.reduce_sum(settings.k_entropy*entropy)
 
         self.model = Model(inputs=inputs, outputs=outputs, name='actor_critic')
         self.optimizer = Adam(settings.alpha)
-        #self.model.add_loss(actor_critic_loss(actor_out, action_input, advantage_input))
-        self.model.add_loss(critic_loss(critic_out, target_input))
-        self.model.add_loss(entropy_loss(actor_out))
         self.model.compile(optimizer=self.optimizer, run_eagerly=True)
-        '''
-        self.model.compile(optimizer=optimizer,
-                           loss = {'critic_out': critic_loss(critic_out, target_input),
-                                   'actor_out': actor_critic_loss(actor_out, action_input, advantage_input)
-                           })
-        '''
         self.model.summary()
 
     def fit(self, data):
