@@ -63,6 +63,7 @@ if __name__ == "__main__":
     network_settings.k_actor = 1.0
     network_settings.k_critic = 1.0
     network_settings.k_entropy = 0.0
+    network_settings.dropout = 0.25
 
     actor_critic = ActorCritic(network_settings)
 

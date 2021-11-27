@@ -86,8 +86,8 @@ class ActorCritic:
             critic_layers.append(critic_layer)
             critic_layer = LeakyReLU(alpha=0.3, name='critic_dense_relu'+str(i))(critic_layers[-1])
             critic_layers.append(critic_layer)
-            #critic_layer = Dropout(settings.dropout, name='critic_dense_dropout'+str(i))(critic_layers[-1])
-            #critic_layers.append(critic_layer)
+            critic_layer = Dropout(settings.dropout, name='critic_dense_dropout'+str(i))(critic_layers[-1])
+            critic_layers.append(critic_layer)
         critic_out = Dense(1, name='critic_out')(critic_layer)
 
         self.critic_model = Model(critic_input, critic_out, name='critic')
@@ -104,8 +104,8 @@ class ActorCritic:
             actor_layers.append(actor_layer)
             actor_layer = LeakyReLU(alpha=0.3, name='actor_dense_relu'+str(i))(actor_layers[-1])
             actor_layers.append(actor_layer)
-            #actor_layer = Dropout(settings.dropout, name='actor_dense_dropout'+str(i))(actor_layers[-1])
-            #actor_layers.append(actor_layer)
+            actor_layer = Dropout(settings.dropout, name='actor_dense_dropout'+str(i))(actor_layers[-1])
+            actor_layers.append(actor_layer)
         actor_out = Dense(settings.actor_shape, activation='softmax', name='actor_out')(actor_layers[-1])
         #actor_out = Softmax(name='actor_softmax')(actor_out)
 
