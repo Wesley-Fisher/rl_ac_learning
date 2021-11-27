@@ -37,19 +37,14 @@ class Trainer:
             h.sensed_state_0 = self.world.get_sensed_state()
 
             # Get Network Output
-            data = (np.array([h.sensed_state_0]),
-                    self.actor_critic.null_action,
-                    self.actor_critic.null_target,
-                    self.actor_critic.null_advantage)
+            data = (np.array([h.sensed_state_0]))
             '''
             print(data)
             print(data[0].shape)
             '''
-            pred = self.actor_critic.model.predict(data)
+            h.value_0 = float(self.actor_critic.predict_value(data))
 
-            h.value_0 = float(pred[0][0])
-
-            acts = pred[1][0].tolist()
+            acts = self.actor_critic.predict_actions(data)
             ai = acts.index(max(acts))
 
             # Add Exploration
@@ -74,12 +69,8 @@ class Trainer:
             h.sensed_state_1 = self.world.get_sensed_state()
 
             # Get Network Output
-            data = (np.array([h.sensed_state_1]),
-                    self.actor_critic.null_action,
-                    self.actor_critic.null_target,
-                    self.actor_critic.null_advantage)
-            pred = self.actor_critic.model.predict(data)
-            h.value_1 = float(pred[0][0])
+            data = (np.array([h.sensed_state_1]))
+            h.value_1 = float(self.actor_critic.predict_value(data))
 
             h.reward_1 = self.world.get_reward(h.state_0,
                                                h.state_1,

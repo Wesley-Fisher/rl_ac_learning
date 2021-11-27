@@ -63,12 +63,8 @@ class FourArmBanditWorld(World):
                 i = unit + 2*two
 
                 vec = np.array([np.array([[unit], [two]]).reshape(2,)])
-                data = (vec,
-                        network.null_action,
-                        network.null_target,
-                        network.null_advantage)
-                pred = network.model.predict(data, batch_size=1)
-                acts = pred[1][0].tolist()
+                data = (vec)
+                acts = network.predict_actions(data)
 
 
                 print("%s - (%s)" % (str(acts), str(vec)))

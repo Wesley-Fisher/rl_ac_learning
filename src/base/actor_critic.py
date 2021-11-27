@@ -103,6 +103,12 @@ class ActorCritic:
         self.actor_model = Model(actor_input, actor_out, name='actor')
         self.actor_model.compile(optimizer=self.optimizer, run_eagerly=True)
         self.actor_model.summary()
+    
+    def predict_value(self, data):
+        return self.critic_model(data)
+    
+    def predict_actions(self, data):
+        return self.actor_model(data).numpy().tolist()
 
     def fit(self, data):
         for i in range(0, data[0].shape[0]):
