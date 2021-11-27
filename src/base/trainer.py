@@ -37,13 +37,17 @@ class Trainer:
             h.sensed_state_0 = self.world.get_sensed_state()
 
             # Get Network Output
-            data = (h.sensed_state_0,
+            data = (np.array([h.sensed_state_0]),
                     self.actor_critic.null_action,
                     self.actor_critic.null_target,
                     self.actor_critic.null_advantage)
+            '''
+            print(data)
+            print(data[0].shape)
+            '''
             pred = self.actor_critic.model.predict(data)
 
-            h.value_0 = pred[0][0]
+            h.value_0 = float(pred[0][0])
 
             acts = pred[1][0].tolist()
             ai = acts.index(max(acts))
@@ -51,8 +55,11 @@ class Trainer:
             # Add Exploration
             if random.uniform(0.0, 1.0) < self.settings.exploration:
                 L = len(acts)
-                exp = random.randint(0, L)
+                exp = random.randint(0, L-1)
+                i0 = ai
                 ai = (ai + exp) % L
+                i1 = ai
+                #print("(%f + %f) mod %f = %f" % (i0, exp, L, i1))
 
             actions = [0.0 for ap in acts]
             actions[ai] = 1.0
@@ -67,17 +74,20 @@ class Trainer:
             h.sensed_state_1 = self.world.get_sensed_state()
 
             # Get Network Output
-            data = (h.sensed_state_1,
+            data = (np.array([h.sensed_state_1]),
                     self.actor_critic.null_action,
                     self.actor_critic.null_target,
                     self.actor_critic.null_advantage)
             pred = self.actor_critic.model.predict(data)
-            h.value_1 = pred[0][0]
+            h.value_1 = float(pred[0][0])
 
             h.reward_1 = self.world.get_reward(h.state_0,
                                                h.state_1,
                                                h.action_0,
                                                h.action_prob_0)
+            '''
+            print(h.reward_1)
+            '''
             hist.append(h)
         
         if len(hist) == 0:
@@ -88,9 +98,12 @@ class Trainer:
         for i in range(len(hist)-2, -1, -1):
             hist[i].return_val = hist[i].reward_1 + self.settings.gamma * hist[i+1].return_val
         
+        for i in range(0, len(hist)):
+            hist[i].advantage = hist[i].reward_1 + self.settings.gamma*hist[i].value_1 - hist[i].value_0
+
         return hist
     
-    def train_on_batch(self, batch_hist, verbosity):
+    def train_on_batch(self, batch_hist, verbosity, num_epochs=1):
         if len(batch_hist) == 0:
             return
         
@@ -99,9 +112,12 @@ class Trainer:
             samples = samples + batch
         
         states = np.array([s.sensed_state_0 for s in samples])
-        advantages = np.array([s.reward_1 + self.settings.gamma*s.value_1 - s.value_0 for s in samples])
+        advantages = np.array([s.advantage for s in samples])
         targets = advantages
         actions = np.array([s.action_0 for s in samples])
+
+        data = (states, actions, targets, advantages)
+        #print(data)
 
         '''
         print(states.shape)
@@ -109,6 +125,16 @@ class Trainer:
         print(targets.shape)
         print(advantages.shape)
         '''
-        self.actor_critic.model.fit(x=(states, actions, targets, advantages),
+        '''
+        for state, adv, target, act in zip (states, advantages, targets, actions):
+            print("%s -> %s -> %s / %s" % (str(state), str(act), str(target), str(adv)))
+        '''
+        self.actor_critic.fit(data)
+        '''
+        self.actor_critic.model.fit(x=data,
                                     verbose=verbosity,
-                                    batch_size=1)
+                                    batch_size=1,
+                                    epochs=num_epochs)
+        '''
+
+        #for layer in self.actor_critic.model.layers: print(layer.get_config()['name'], '\n', layer.get_weights())

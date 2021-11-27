@@ -40,7 +40,7 @@ class ThreeArmBanditWorld(World):
         sig = self.properties.sig[i]
         return random.gauss(mu, sig)
     
-    def animate(self, history):
+    def animate(self, history, network):
         for h in history:
             print("%s - %s - %s" % (str(h.action_prob_0), str(h.action_0), str(h.value_0)))
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         batch_hist = trainer.run_batch(N_per_batch)
 
         if len(batch_hist) > 0:
-            world.animate(batch_hist[-1])
+            world.animate(batch_hist[-1], actor_critic)
         
         trainer.train_on_batch(batch_hist, 0)
 

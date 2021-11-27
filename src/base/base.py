@@ -18,6 +18,7 @@ class History:
         self.reward_1 = None
 
         self.return_val = None
+        self.advantage = None
 
 class State:
     def __init__(self):
@@ -50,5 +51,5 @@ class World:
     def get_reward(self, s0, s1, a, ap):
         raise NotImplementedError
     
-    def animate(self, history):
+    def animate(self, history, network):
         raise NotImplementedError
