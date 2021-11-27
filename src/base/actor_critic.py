@@ -24,7 +24,7 @@ class NetworkSettings:
         self.k_entropy = 0.0
         self.dropout = 0.0
 
-def actor_loss(loss_actor_out, loss_action, loss_advantage, k_critic, k_actor, k_entropy):
+def actor_loss(loss_actor_out, loss_action, loss_advantage, k_actor, k_entropy):
             # Heavy Influence: https://www.tensorflow.org/tutorials/reinforcement_learning/actor_critic
             '''
             ACTOR LOSS: change probability of action taken in direction of sign(advantage)
@@ -111,7 +111,7 @@ class ActorCritic:
         self.actor_model.summary()
     
     def predict_value(self, data):
-        return self.critic_model(data)
+        return float(self.critic_model(data))
     
     def predict_actions(self, data):
         return self.actor_model(data).numpy().tolist()[0]
@@ -129,7 +129,7 @@ class ActorCritic:
 
             with tf.GradientTape() as tape:
                 pred = self.actor_model((state.reshape((1,self.settings.in_shape[0]))))
-                loss = actor_loss(pred, action, advantage, self.settings.k_critic, self.settings.k_actor, self.settings.k_entropy)
+                loss = actor_loss(pred, action, advantage, self.settings.k_actor, self.settings.k_entropy)
 
             gradients = tape.gradient(loss, self.actor_model.trainable_weights)
 
