@@ -68,33 +68,10 @@ class ActorCritic:
         ik = initializers.RandomNormal(stddev=0.5, seed=1)
         ib = initializers.RandomNormal(stddev=0.01, seed=2)
 
-        # INPUTS
-        state_input = Input(shape=settings.in_shape, name='state_in')
-        action_input = Input(shape=settings.actor_shape, name='action_in')
-        target_input = Input(shape=(1), name='target_in')
-        advantage_input = Input(shape=(1), name='advantage_in')
 
-        inputs = [state_input, action_input, target_input, advantage_input]
-
-        # NULL INPUTS (for prediction)
-        self.null_action = np.array([[0.0]*settings.actor_shape])
-        self.null_target = np.array([0.0])
-        self.null_advantage = np.array([0.0])
-
-        # SHARED LAYERS
-        layer = state_input
-        shared_layers = [layer]
-        for i, num in enumerate(settings.shared_layers):
-            layer = Dense(num, activation='sigmoid', kernel_initializer=ik, bias_initializer=ib, name='dense_'+str(i))(shared_layers[-1])
-            shared_layers.append(layer)
-            layer = LeakyReLU(alpha=0.3, name='dense_relu'+str(i))(shared_layers[-1])
-            shared_layers.append(layer)
-            #layer = Dropout(settings.dropout, name='dense_dropout'+str(i))(shared_layers[-1])
-            #shared_layers.append(layer)
-        
         # CRITIC
-        critic_layer = shared_layers[-1]
-        critic_layers = [critic_layer]
+        critic_input = Input(shape=settings.in_shape, name='critic_state_in')
+        critic_layers = [critic_input]
         for i, num in enumerate(settings.critic_layers):
             critic_layer = Dense(num, kernel_initializer=ik, bias_initializer=ib, name='critic_dense_'+str(i))(critic_layers[-1])
             critic_layers.append(critic_layer)
@@ -104,10 +81,15 @@ class ActorCritic:
             #critic_layers.append(critic_layer)
         critic_out = Dense(1, name='critic_out')(critic_layer)
 
+        self.critic_model = Model(critic_input, critic_out, name='critic')
+        self.optimizer = Adam(settings.alpha)
+        self.critic_model.compile(optimizer=self.optimizer, run_eagerly=True)
+        self.critic_model.summary()
+
 
         # ACTOR
-        actor_layer = shared_layers[-1]
-        actor_layers = [actor_layer]
+        actor_input = Input(shape=settings.in_shape, name='actor_state_in')
+        actor_layers = [actor_input]
         for i, num in enumerate(settings.actor_layers):
             actor_layer = Dense(num, kernel_initializer=ik, bias_initializer=ib, name='actor_dense_'+str(i))(actor_layers[-1])
             actor_layers.append(actor_layer)
@@ -118,14 +100,9 @@ class ActorCritic:
         actor_out = Dense(settings.actor_shape, activation='softmax', name='actor_out')(actor_layers[-1])
         #actor_out = Softmax(name='actor_softmax')(actor_out)
 
-
-        outputs = [critic_out, actor_out]
-
-
-        self.model = Model(inputs=inputs, outputs=outputs, name='actor_critic')
-        self.optimizer = Adam(settings.alpha)
-        self.model.compile(optimizer=self.optimizer, run_eagerly=True)
-        self.model.summary()
+        self.actor_model = Model(actor_input, actor_out, name='actor')
+        self.actor_model.compile(optimizer=self.optimizer, run_eagerly=True)
+        self.actor_model.summary()
 
     def fit(self, data):
         for i in range(0, data[0].shape[0]):
