@@ -89,7 +89,7 @@ if __name__ == "__main__":
     network_settings.critic_layers = [4, 4]
     network_settings.alpha = 1e-3
     network_settings.k_actor = 1e0
-    network_settings.k_critic = 1e0
+    network_settings.k_entropy = 1e-9
     network_settings.dropout = 0.25
 
     actor_critic = ActorCritic(network_settings)
