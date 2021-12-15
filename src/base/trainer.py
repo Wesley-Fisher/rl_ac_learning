@@ -7,7 +7,8 @@ from .base import History
 class TrainingSettings:
     def __init__(self):
         self.gamma = None
-        self.exploration = None
+        self.exploration = 0.0
+        self.exploration_drawn = 0.0
 
 class Trainer:
     def __init__(self, world, actor_critic, settings):
