@@ -85,7 +85,7 @@ class SmallMazeWorld(World):
 
         # Right
         if i == 0:
-            if self.state.x < WIDTH:
+            if self.state.x < WIDTH-1:
                 x1 = self.state.x + 1
                 y1 = self.state.y
             else:
@@ -109,7 +109,7 @@ class SmallMazeWorld(World):
         
         # Down
         if i == 3:
-            if self.state.y < HEIGHT:
+            if self.state.y < HEIGHT-1:
                 x1 = self.state.x
                 y1 = self.state.y + 1
             else:
@@ -124,6 +124,7 @@ class SmallMazeWorld(World):
             self.state.y = y1
             state.time = state.time + 1
 
+        #print("(%d, %d, %d)" % (self.state.x, self.state.y, self.state.off))
     
     def get_reward(self, s0, s1, a, ap):
         if s1.off:
@@ -132,15 +133,28 @@ class SmallMazeWorld(World):
             return -1
         if s1.x == self.properties.end_x and s1.y == self.properties.end_y:
             return 10
-        return -0.01
+        return -.1*((self.properties.end_x - s1.x) + (self.properties.end_y - s1.y))
     
     def animate(self, history, network):
 
-        empty = [0.0] * WIDTH
-        empty = [empty] * HEIGHT
+        empty = []
+        for y in range(0, HEIGHT):
+            row = [0.0] * WIDTH
+            empty.append(row)
 
         vals = copy.deepcopy(empty)
         actions = copy.deepcopy(empty)
+        for h in history:
+            p0 = "(%d, %d)" % (h.state_0.x, h.state_0.y)
+            a = str(h.action_prob_0)
+            act = "(%d)" % h.action_0.index(max(h.action_0))
+            p1 = "(%d, %d)" % (h.state_1.x, h.state_1.y)
+            end = "[%d, %d]" % (h.state_1.off, h.state_1.hit)
+            r = "%.1f" % h.reward_1
+            ret = "%.2f" % h.return_val
+            adv = "%.2f" % h.advantage
+
+            print("%s->%s%s->%s%s  =>  %s->%s / %s" % (p0, a, act, p1, end, r, ret, adv))
 
         for x in range(0, WIDTH):
             for y in range(0, HEIGHT):
@@ -149,22 +163,26 @@ class SmallMazeWorld(World):
                 state.y = y
 
                 sensed = self.state_to_sensed(state)
-                data = (sensed)
+                data = (np.array([np.array(sensed)]))
 
                 val = network.predict_value(data)
                 vals[y][x] = float('%.2f' % val)
 
-                acts = network.predict_actions(data)[0]
-                actions[i] = acts.index(max(acts))
+                acts = network.predict_actions(data)
+                actions[y][x] = acts.index(max(acts))
 
-        print(vals)
-        print(actions)
+        for val in vals:
+            print(val)
+        print("")
+        for action in actions:
+            print(action)
+        print("")
         print("")
         print("")
 
 if __name__ == "__main__":
     N_batches = 500
-    N_per_batch = 100
+    N_per_batch = 10
 
     properties = SmallMazeProperties()
     state = SmallMazeState()
@@ -175,7 +193,7 @@ if __name__ == "__main__":
     network_settings.actor_shape = 4
     network_settings.actor_layers = [16, 16, 8]
     network_settings.critic_layers = [16, 8]
-    network_settings.alpha = 1e-3
+    network_settings.alpha = 1e-4
     network_settings.k_actor = 1e0
     network_settings.k_entropy = 1e-9
     network_settings.dropout = 0.25
@@ -183,8 +201,8 @@ if __name__ == "__main__":
     actor_critic = ActorCritic(network_settings)
 
     training_settings = TrainingSettings()
-    training_settings.gamma = 0.9
-    training_settings.exploration = 0.1
+    training_settings.gamma = 0.8
+    training_settings.exploration = 0.0
     training_settings.exploration_drawn = 0.1
 
     trainer = Trainer(world, actor_critic, training_settings)
