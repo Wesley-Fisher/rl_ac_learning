@@ -48,13 +48,21 @@ class Trainer:
             ai = acts.index(max(acts))
 
             # Add Exploration
-            if random.uniform(0.0, 1.0) < self.settings.exploration:
+            r = random.uniform(0.0, 1.0)
+            if r < self.settings.exploration:
                 L = len(acts)
                 exp = random.randint(0, L-1)
                 i0 = ai
                 ai = (ai + exp) % L
                 i1 = ai
                 #print("(%f + %f) mod %f = %f" % (i0, exp, L, i1))
+            if r < self.settings.exploration + self.settings.exploration_drawn:
+                eps = 0.1
+                clip_acts = [min(max(a, eps), 1.0 - eps) for a in acts]
+                indices = []
+                for i in range(0,len(clip_acts)):
+                    indices.append(i)
+                ai = random.choices(indices, clip_acts)[0]
 
             actions = [0.0 for ap in acts]
             actions[ai] = 1.0
